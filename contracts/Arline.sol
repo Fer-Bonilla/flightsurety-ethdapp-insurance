@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.6 <0.8.1;
 
+import "./FlightSuretyData.sol";
 import "./InsurancePolicy.sol";
 
 contract Airline {
@@ -10,7 +11,10 @@ contract Airline {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/    
 
+    FlightSuretyData SuretyData;
+
     struct AirlineData {
+        address airlineAddress // Airline address
         bytes32 airlineName; // Airline name
         AirlineState state; // Arline state
         address[] votedBy; // for multi-party consensus
@@ -27,49 +31,92 @@ contract Airline {
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
 
-    modifier onlyRequested(address account) {
-        require(isRequested(account), "Airline must be BeforeEntry state");
+    /**
+     * @dev This Modifier validates that Airline's Address is not registered yet in the Smart Contract
+     */
+
+    modifier onlyNotRegistered(address airlineAccount) {
+        require(isNotRegistered(airlineAccount), "Airline is registered, can't be registered again");
         _;
     }
 
-    modifier onlyApproved(address account) {
-        require(isEntried(account), "Airline must be Entried state");
+    /**
+     * @dev This Modifier validates that Airline´s state is Requested
+     */
+
+    modifier onlyRequested(address airlineAccount) {
+        require(isRequested(airlineAccount), "Airline must be have a request register state first");
         _;
     }
 
-    modifier onlyActive(address account) {
-        require(isRegistered(account), "Airline must be Registered state");
+    /**
+     * @dev This Modifier validates that Airline´s state is Approved
+     */
+
+    modifier onlyApproved(address airlineAccount) {
+        require(isApproved(airlineAccount), "Airline must be be approved first");
         _;
     }
 
-    function isRequested(address account)
+    /**
+     * @dev This Modifier validates that Airline´s state is Active
+     */
+
+    modifier onlyActive(address airlineAccount) {
+        require(isActive(airlineAccount), "Airline must be Approved first");
+        _;
+    }
+
+    function isNotRegistered(address airlineAccount)
         internal
         view
         returns(bool)
     {
-        return airlines[account].state == AirlineState.Requested;
+        return airlines[airlineAccount] != NULL;
     }
 
-    function isEntried(address account)
+    function isRequested(address airlineAccount)
         internal
         view
         returns(bool)
     {
-        return airlines[account].status == AirlineStatus.Entried;
+        return airlines[airlineAccount].state == AirlineState.Requested;
     }
 
-    function isRegistered(address account)
+    function isApproved(address airlineAccount)
         internal
         view
         returns(bool)
     {
-        return airlines[account].status == AirlineStatus.Registered;
+        return airlines[airlineAccount].state == AirlineState.Approved;
+    }
+
+    function isActive(address airlineAccount)
+        internal
+        view
+        returns(bool)
+    {
+        return airlines[airlineAccount].state == AirlineState.Active;
     }
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
+    /**
+     * @dev This Function register the Airline Addres in the contract and set state to Requested
+     */
+    function requestRegistration(address airlineAccount, bytes32 airlineName)
+        internal
+        onlyNotRegistered(airlineAccount)
+    {
+        AirlineData memory newAirline = AirlineData(AirlineStatus.Entried, new address[](0), 0);
+        SuretyData.addArline(newAirline);
+    }
+
+    /**
+     * @dev This Function register the Airline Addres in the contract and set state to Requested
+     */
     function entry(address account)
         internal
         onlyBeforeEntry(account)

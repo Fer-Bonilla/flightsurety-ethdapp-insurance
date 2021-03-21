@@ -14,7 +14,14 @@ contract FlightSuretyData {
 
     address private contractOwner;    // Account used to deploy contract
     bool private operational = true;  // Blocks all state changes throughout the contract if false
+    
     mapping (address => Airline) internal airlines; // Mapping with airlines list
+    mapping (bytes32 => Flight) private flights; //flightsKeys to Flight
+    mapping (bytes32 => Ticket) private tickets; //insuranceKey to InsuranceDetails
+    mapping (bytes32 => Insurance) private insurances; //insuranceKey to InsuranceDetails
+
+    uint256 private numberOfAirlines; //counter to keep how many registered airlines are there
+
 
 
     struct Airline {
@@ -37,16 +44,12 @@ contract FlightSuretyData {
     }
 
 
-    uint256 private numberOfAirlines; //counter to keep how many registered airlines are there
 
     mapping (address => bool) authorizedContracts; //authorized contracts to call the data contract
-    mapping (address => Airline) airlines; //airlines
-    mapping (address => uint256) airlineBalances; //balance for each airline.
 
     bytes32[] private flightKeys; //array of keys for the registered flights
-    mapping (bytes32 => Flight) private flights; //flightsKeys to Flight
     mapping (bytes32 => bytes32[]) private flightInsurances; //flightKeys to InsurancesKeys;
-    mapping (bytes32 => Insurance) private insurances; //insuranceKey to InsuranceDetails
+
     mapping (address => uint256) private insureeBalances; //balance for each insuree
 
 
@@ -135,15 +138,30 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */ 
-    function registerAirline(address _address, bytes32 name) 
+    // MODIFIED
+    function registerAirline(address airlineAddress, bytes32 airlineName) 
         external
         isAuthorized
         isOperational
     {
-        airlines[_address] = Airline(name, true, false);
+        airlines[_address] = Airline(airlineName, true, false);
         numberOfAirlines = numberOfAirlines.add(1);
     }
-    
+
+   /**
+    * @dev Count the number of Airlines registeres in the contract
+    */ 
+    // MODIFIED
+    function countAirlinesRegistered() 
+        external
+        isAuthorized
+        isOperational
+        returns (uint)
+    {
+        return airlines.length
+    }    
+
+
     function validateAirline(address _address) external isAuthorized isOperational {
         airlines[_address].isVerified = true;
     }
