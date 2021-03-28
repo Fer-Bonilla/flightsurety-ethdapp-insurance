@@ -11,10 +11,11 @@ contract Airline {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/    
 
-    FlightSuretyData SuretyData;
+    mapping (address => Airline) internal airlines;
+    uint internal registeredAirlinesCount = 0;
 
+    
     struct AirlineData {
-        address airlineAddress // Airline address
         bytes32 airlineName; // Airline name
         AirlineState state; // Arline state
         address[] votedBy; // for multi-party consensus
@@ -67,6 +68,15 @@ contract Airline {
         _;
     }
 
+    /**
+     * @dev This Modifier validates that voting airline not vote again for the same new Airline
+     */
+
+    modifier onlyNotVoted(address airlineVoting, address airlineVoted) {
+        require(isNotVoted(airlineVoting, airlineVoted), "Already voted from this airline");
+        _;
+    }
+
     function isNotRegistered(address airlineAccount)
         internal
         view
@@ -99,12 +109,26 @@ contract Airline {
         return airlines[airlineAccount].state == AirlineState.Active;
     }
 
+    function isNotVoted(address airlineVoting, address airlineVoted)
+        internal
+        view
+        returns(bool)
+    {
+        bool isDuplicate = false;
+        for(uint i = 0; i < airlines[airlineVoted].votedBy.length; i++) {
+            if (airlines[airlineVoted].votedBy[i] == airlineVoting) {
+                isDuplicate = true;
+            }
+        }
+        returns(!isDuplicate)
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
     /**
-     * @dev This Function register the Airline Addres in the contract and set state to Requested
+     * @dev This Function register the Airline Addres in the contract and set state to Register Requested
      */
     function requestRegistration(address airlineAccount, bytes32 airlineName)
         internal
@@ -117,29 +141,20 @@ contract Airline {
     /**
      * @dev This Function register the Airline Addres in the contract and set state to Requested
      */
-    function entry(address account)
+    function registerRequest(address airlineAccount)
         internal
-        onlyBeforeEntry(account)
+        onlyBeforeEntry(airlineAccount)
     {
-        Airline memory airline = Airline(AirlineStatus.Entried, new address[](0), 0);
+        Airline memory airline = AirlineData(AirlineStatus.Entried, new address[](0), 0);
         airlines[account] = airline;
     }
 
-    function voted(address account, address from)
+    function approveAirline(address airlineVoting, address airlineVoted)
         internal
         onlyEntried(account)
         onlyRegistered(from)
     {
-        bool isDuplicate = false;
-        for(uint i = 0; i < airlines[account].votedBy.length; i++) {
-            if (airlines[account].votedBy[i] == from) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        require(!isDuplicate, "Already voted from this airline");
-
-        airlines[account].votedBy.push(from);
+        airlines[airlineVoted].votedBy.push(airlineVoting);
     }
 
     function register(address account)

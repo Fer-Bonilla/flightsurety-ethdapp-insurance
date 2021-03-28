@@ -144,8 +144,7 @@ contract FlightSuretyData {
         isAuthorized
         isOperational
     {
-        airlines[_address] = Airline(airlineName, true, false);
-        numberOfAirlines = numberOfAirlines.add(1);
+        Airline.requestRegistration(airlineAddress, airlineName);
     }
 
    /**
@@ -158,7 +157,7 @@ contract FlightSuretyData {
         isOperational
         returns (uint)
     {
-        return airlines.length
+        return airlines.length;
     }    
 
 
